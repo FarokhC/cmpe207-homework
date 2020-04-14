@@ -10,6 +10,15 @@ io.on('connection', function(socket){
   socket.on('chat message', function(msg){
     socket.broadcast.emit('chat message', msg);
   });
+  socket.on('typing', function(msg){
+    console.log("typing");
+    if(msg.nickname) {
+      socket.broadcast.emit('typing', msg);
+    }
+    else {
+      socket.broadcast.emit('typing', null);
+    }
+  });
   socket.broadcast.emit('hi');
 });
 

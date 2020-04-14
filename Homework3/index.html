@@ -25,7 +25,8 @@
         // var message = $('#nickname').val() + ': ' + $('#m').val();
         var msg = {
           nickname: $('#nickname').val(),
-          message :$('#m').val()
+          message :$('#m').val(),
+          isTyping: false
         };
         socket.emit('chat message', msg);
         $('#m').val('');
@@ -35,7 +36,30 @@
       socket.on('chat message', function(msg){
         $('#messages').append($('<li>').text(msg.nickname + ": " + msg.message));
       });
+      socket.on('typing', function(msg){
+        var split_messages = $('#messages').html().split("<li>");
+        var last_line = split_messages[split_messages.length - 1];
+        if(!last_line.includes(msg.nickname + " is typing")) {
+          $('#messages').append($('<li>').text(msg.nickname + " is typing"));
+        }
+      });
     });
+    function handleUserInput(val){
+      if(event.keyCode != 13) {
+        var socket = io();
+        var msg = {
+          nickname: $('#nickname').val(),
+        };
+        socket.emit('typing', msg);
+        return false;
+      }
+    }
+
+    function search() {
+    if(event.keyCode == 13) {
+        alert("should get the innerHTML or text value here");
+    }
+}
   </script>
   <body>
     <ul id="messages"></ul>
@@ -43,8 +67,8 @@
       <label style="color:white">Nickname:</label>
       <div style="display:inline-flex;width:100%">
         <input style="width:20%" id="nickname" type="text" id="nickname" name="nickname"><br><br>
-        <input style="width:80%" id="m" autocomplete="off" /><button>Send</button>
-    </div>
+        <input style="width:80%" id="m" onkeypress="handleUserInput(this);"/><button>Send</button>
+      </div>
     </form>
   </body>
 </html>
