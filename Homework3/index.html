@@ -43,7 +43,6 @@
           $('#messages').append($('<li>').text(msg.nickname + " is typing"));
         }
       });
-    });
     function handleUserInput(val){
       if(event.keyCode != 13) {
         var socket = io();
@@ -63,7 +62,7 @@
       <label style="color:white">Nickname:</label>
       <div style="display:inline-flex;width:100%">
         <input style="width:20%" id="nickname" type="text" id="nickname" name="nickname"><br><br>
-        <input style="width:80%" id="m" onkeypress="handleUserInput(this);"/><button>Send</button>
+        <input style="width:80%" id="m" onkeypress="handleUserInput(this)";/><button>Send</button>
       </div>
     </form>
   </body>
