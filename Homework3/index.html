@@ -5,9 +5,9 @@
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #bottom_bar { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      #input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      #button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
       #messages { list-style-type: none; margin: 0; padding: 0; }
       #messages li { padding: 5px 10px; }
       #messages li:nth-child(odd) { background: #eee; }
@@ -17,36 +17,51 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
   <script>
-    $(function () {
-      var socket = io();
-      $('form').submit(function(e){
-        e.preventDefault(); // prevents page reloading
-        // socket.emit('chat message', $('#m').val());
-        // var message = $('#nickname').val() + ': ' + $('#m').val();
-        var msg = {
-          nickname: $('#nickname').val(),
-          message :$('#m').val(),
-          isTyping: false
-        };
-        socket.emit('chat message', msg);
-        $('#m').val('');
-        $('#messages').append($('<li>').text(msg.nickname + ": " + msg.message));
-        return false;
+    var socket = io();
+    socket.on('disconnected', function(msg) {
+        $('#messages').append($('<li>').text(msg.nickname + " disconnected"));
       });
-      socket.on('chat message', function(msg){
-        $('#messages').append($('<li>').text(msg.nickname + ": " + msg.message));
-      });
-      socket.on('typing', function(msg){
-        var split_messages = $('#messages').html().split("<li>");
-        var last_line = split_messages[split_messages.length - 1];
-        if(!last_line.includes(msg.nickname + " is typing")) {
-          $('#messages').append($('<li>').text(msg.nickname + " is typing"));
-        }
-      });
+    socket.on('sign_in', function(msg){
+      console.log(JSON.stringify(msg));
+      if(msg.connected) {
+        $('#messages').append($('<li>').text("Successfully connected"));
+        document.getElementById("nickname").disabled = true;
+        document.getElementById("connect").disabled = true;
+        document.getElementById('disconnect').disabled = false;
+        document.getElementById("m").disabled = false;
+        document.getElementById("send").disabled = false;
+      }
+    });
+    socket.on('chat message', function(msg){
+      $('#messages').append($('<li>').text(msg.nickname + ": " + msg.message));
+    });
+    socket.on('connected', function(msg){
+      $('#messages').append($('<li>').text(msg.nickname + " has connected"));
+      document.getElementById('disconnect').disabled = false;
+      document.getElementById("m").disabled = false;
+      document.getElementById("send").disabled = false;
+    });
+    function handleSend(val){
+      // e.preventDefault(); // prevents page reloading
+      var msg = {
+        nickname: $('#nickname').val(),
+        message :$('#m').val(),
+        isTyping: false
+      };
+      socket.emit('chat message', msg);
+      $('#m').val('');
+      $('#messages').append($('<li>').text(msg.nickname + ": " + msg.message));
+      return false;
+    }
+    socket.on('typing', function(msg){
+      var split_messages = $('#messages').html().split("<li>");
+      var last_line = split_messages[split_messages.length - 1];
+      if(!last_line.includes(msg.nickname + " is typing")) {
+        $('#messages').append($('<li>').text(msg.nickname + " is typing"));
+      }
     });
     function handleUserInput(val){
       if(event.keyCode != 13) {
-        var socket = io();
         var msg = {
           nickname: $('#nickname').val(),
         };
@@ -54,15 +69,52 @@
         return false;
       }
     }
+
+    function handleDisconnect(val){
+      var nickname = document.getElementById("nickname").value;
+      $('#messages').append($('<li>').text("Disconnected"));
+      document.getElementById("nickname").disabled = false;
+      document.getElementById("connect").disabled = false;
+      document.getElementById('disconnect').disabled = true;
+      document.getElementById("m").disabled = true;
+      document.getElementById("send").disabled = true;
+      var msg= {
+        nickname: nickname
+      };
+      socket.emit('disconnect_manually', msg);
+      window.close();
+    }
+
+    function handleConnect(val){
+      var nickname = document.getElementById("nickname").value;
+      if(nickname == "") {
+        $('#messages').append($('<li>').text("Please enter a valid nickname"));
+      }
+      else {
+        document.getElementById("nickname").disabled = true;
+        document.getElementById("connect").disabled = true;
+        document.getElementById('disconnect').disabled = true;
+        document.getElementById("m").disabled = true;
+        document.getElementById("send").disabled = true;
+        var msg= {
+          nickname: nickname
+        };
+        socket.emit('sign_in', msg);
+      }
+    }
+
   </script>
   <body>
     <ul id="messages"></ul>
-    <form action="">
+    <div id='bottom_bar'>
       <label style="color:white">Nickname:</label>
       <div style="display:inline-flex;width:100%">
-        <input style="width:20%" id="nickname" type="text" id="nickname" name="nickname"><br><br>
-        <input style="width:80%" id="m" onkeypress="handleUserInput(this);"/><button>Send</button>
+        <input class = "input" style="width:20%" id="nickname" type="text" id="nickname" name="nickname"><br><br>
+        <button id="connect" onclick="handleConnect(this)">Sign on</button>
+        <button id="disconnect" onclick="handleDisconnect(this)" disabled>Sign off</button>
+        <input style="width:80%" id="m" onkeypress="handleUserInput(this);" disabled/>
+        <button id="send" onclick="handleSend(this)" disabled>Send</button>
       </div>
-    </form>
+    </div>
   </body>
 </html>
