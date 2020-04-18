@@ -45,6 +45,7 @@ io.on('connection', function(socket){
     console.log("got chat message")
     socket.broadcast.emit('chat message', msg);
   });
+
   socket.on('typing', function(msg){
     console.log("typing");
     if(msg.nickname) {
@@ -54,7 +55,6 @@ io.on('connection', function(socket){
       socket.broadcast.emit('typing', null);
     }
   });
-});
 
 http.listen(3000, function(){
   console.log('listening on *:3000');
