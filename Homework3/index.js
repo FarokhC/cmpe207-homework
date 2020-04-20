@@ -9,7 +9,6 @@ app.get('/', function(req, res){
 var connectedUsers = [];
 
 io.on('connection', function(socket){
-
   socket.on('disconnect', function(msg) {
     try {
       nickname = io.sockets.manager.roomClients[socket.id];
@@ -18,6 +17,28 @@ io.on('connection', function(socket){
     }
     catch {
       console.log("couldn't find socket nickname");
+    }
+  });
+
+  socket.on("sendPrivateMessage", function(msg) {
+    var privateMessage = msg.privateMessage;
+    var privateDestination = msg.privateDestination;
+    var privateSource = msg.privateSource;
+    console.log("final destination: " + privateDestination);
+    console.log("conn users: " + JSON.stringify(connectedUsers));
+    if(connectedUsers.includes(privateDestination)) {
+      socket.broadcast.emit("recPrivateMessage", {
+        type: "success",
+        privateDestination: privateDestination,
+        privateMessage: privateMessage,
+        privateSource: privateSource
+      });
+    }
+    else {
+      socket.emit("recPrivateMessage", {
+        type: "error",
+        message: "Failed to send private message to " + privateDestination
+      });
     }
   });
 
