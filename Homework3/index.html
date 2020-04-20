@@ -18,9 +18,19 @@
   <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
   <script>
     var socket = io();
+    var disconnected = true;
+
+    socket.on('online', function(msg) {
+      if(!disconnected){
+        document.getElementById("onlineUsers").innerHTML = msg;
+      }
+    });
+
     socket.on('disconnected', function(msg) {
+      if(!disconnected){
         $('#messages').append($('<li>').text(msg.nickname + " disconnected"));
-      });
+      }
+    });
     socket.on('sign_in', function(msg){
       console.log(JSON.stringify(msg));
       if(msg.connected) {
@@ -30,16 +40,21 @@
         document.getElementById('disconnect').disabled = false;
         document.getElementById("m").disabled = false;
         document.getElementById("send").disabled = false;
+        disconnected = false;
       }
     });
     socket.on('chat message', function(msg){
-      $('#messages').append($('<li>').text(msg.nickname + ": " + msg.message));
+      if(!disconnected) {
+        $('#messages').append($('<li>').text(msg.nickname + ": " + msg.message));
+      }
     });
     socket.on('connected', function(msg){
-      $('#messages').append($('<li>').text(msg.nickname + " has connected"));
-      document.getElementById('disconnect').disabled = false;
-      document.getElementById("m").disabled = false;
-      document.getElementById("send").disabled = false;
+      if(!disconnected){
+        $('#messages').append($('<li>').text(msg.nickname + " has connected"));
+        document.getElementById('disconnect').disabled = false;
+        document.getElementById("m").disabled = false;
+        document.getElementById("send").disabled = false;
+      }
     });
     function handleSend(val){
       // e.preventDefault(); // prevents page reloading
@@ -54,10 +69,12 @@
       return false;
     }
     socket.on('typing', function(msg){
-      var split_messages = $('#messages').html().split("<li>");
-      var last_line = split_messages[split_messages.length - 1];
-      if(!last_line.includes(msg.nickname + " is typing")) {
-        $('#messages').append($('<li>').text(msg.nickname + " is typing"));
+      if(!disconnected) {
+        var split_messages = $('#messages').html().split("<li>");
+        var last_line = split_messages[split_messages.length - 1];
+        if(!last_line.includes(msg.nickname + " is typing")) {
+          $('#messages').append($('<li>').text(msg.nickname + " is typing"));
+        }
       }
     });
     function handleUserInput(val){
@@ -82,7 +99,8 @@
         nickname: nickname
       };
       socket.emit('disconnect_manually', msg);
-      window.close();
+      disconnected = true;
+      document.getElementById("onlineUsers").innerHTML = "";
     }
 
     function handleConnect(val){
@@ -106,6 +124,10 @@
   </script>
   <body>
     <ul id="messages"></ul>
+    <div style="display:bottom;width:100%;position: fixed;bottom: 10%;" id='online'>
+      <h3>Online Users:</h3>
+      <p><span id="onlineUsers"></span></p>
+    </div>
     <div id='bottom_bar'>
       <label style="color:white">Nickname:</label>
       <div style="display:inline-flex;width:100%">
